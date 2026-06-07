@@ -1,6 +1,6 @@
 # Token Launchpad
 
-A **token launchpad** smart contract on Soroban (Stellar) with a full React frontend. Projects use it to conduct token sales: investors contribute deposit tokens (e.g. USDC) during a configured sale window and receive project tokens with optional cliff + linear vesting.
+A Soroban (Stellar) smart contract for conducting token sales with configurable price, cap, soft cap, and cliff + linear vesting. Includes a React frontend and CLI deployment tools.
 
 ---
 

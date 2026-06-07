@@ -1,0 +1,35 @@
+# Rust
+target/
+**/*.rs.bk
+
+# Stellar / Soroban
+.soroban
+.stellar
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Frontend build output
+frontend/dist/
+
+# Contract TypeScript bindings build output
+frontend/src/contract/dist/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

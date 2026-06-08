@@ -4,12 +4,12 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-WASM="$DIR/contracts/token_launchpad/target/wasm32-unknown-unknown/release/token_launchpad.wasm"
+WASM="$DIR/contracts/token_launchpad/target/wasm32v1-none/release/token_launchpad.wasm"
 OUT="$DIR/frontend/src/contract"
 
 if [ ! -f "$WASM" ]; then
   echo "WASM not found. Build first:"
-  echo "  cargo build --target wasm32-unknown-unknown --release"
+  echo "  cargo build --target wasm32v1-none --release"
   exit 1
 fi
 

@@ -431,7 +431,7 @@ Returns `{ vested, available }` where `available = vested - already_claimed`. Us
 
 ```bash
 # Rust + WASM target
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 
 # Soroban CLI (for deployment)
 cargo install soroban-cli --features opt
@@ -443,7 +443,7 @@ cargo install soroban-cli --features opt
 ### 1. Build & test the contract
 
 ```bash
-cargo build --target wasm32-unknown-unknown --release
+cargo build --target wasm32v1-none --release
 cargo test                          # 9 tests, all pass
 ```
 
@@ -879,7 +879,7 @@ Not enough investors participated. Options:
 <summary><strong>WASM build fails — wasm32 target missing</strong></summary>
 
 ```bash
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 ```
 </details>
 

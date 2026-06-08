@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const WASM = join(__dirname, "..", "contracts", "token_launchpad", "target", "wasm32-unknown-unknown", "release", "token_launchpad.wasm");
+const WASM = join(__dirname, "..", "contracts", "token_launchpad", "target", "wasm32v1-none", "release", "token_launchpad.wasm");
 const NETWORK = process.env.STELLAR_NETWORK || "testnet";
 const RPC_URL = process.env.RPC_URL || "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE || "Test SDF Network ; September 2015";
@@ -30,7 +30,7 @@ function saveContractId(id: string) {
 
 function installWasmHash(): string {
   if (!existsSync(WASM)) {
-    console.error("WASM not found. Run: cargo build --target wasm32-unknown-unknown --release");
+    console.error("WASM not found. Run: cargo build --target wasm32v1-none --release");
     process.exit(1);
   }
   const hash = cmd(`stellar contract install \\

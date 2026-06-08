@@ -1,5 +1,7 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, token, Address, Env, Map, Symbol};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, token, Address, Env, Map, Symbol,
+};
 
 const LAUNCHPAD: Symbol = symbol_short!("launchpad");
 const CONTRIBUTORS: Symbol = symbol_short!("contribs");

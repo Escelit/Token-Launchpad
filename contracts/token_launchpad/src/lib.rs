@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(clippy::too_many_arguments, clippy::needless_borrows_for_generic_args)]
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, token, Address, Env, Map, Symbol,
 };
@@ -117,7 +118,6 @@ impl Launchpad {
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
         deposit.transfer(&caller, &env.current_contract_address(), &(amount as i128));
-
         let tokens = (amount as u128 * info.price as u128) as u64;
 
         let mut map: Map<Address, ContributorInfo> = env

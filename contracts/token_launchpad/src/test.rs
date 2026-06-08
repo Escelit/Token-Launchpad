@@ -200,6 +200,124 @@ fn test_withdraw_after_sale_meets_soft_cap() {
     assert_eq!(bal_after, bal_before + 600_000);
 }
 
+#[test]
+fn test_refund_when_soft_cap_not_met() {
+    let (env, id, _, user1, _) = setup();
+    let deposit_token_addr = get_deposit_address(&env, &id);
+    let deposit_token = token::TokenClient::new(&env, &deposit_token_addr);
+
+    set_ledger(&env, 150);
+
+    let launchpad = LaunchpadClient::new(&env, &id);
+    launchpad.contribute(&user1, &100);
+
+    let user_bal_before: i128 = deposit_token.balance(&user1);
+
+    set_ledger(&env, 300);
+
+    // Sale ended with 100 raised < 500_000 soft cap → refund allowed
+    launchpad.refund(&user1);
+
+    let user_bal_after: i128 = deposit_token.balance(&user1);
+    assert_eq!(user_bal_after, user_bal_before + 100);
+}
+
+#[test]
+#[should_panic(expected = "cap reached")]
+fn test_contribute_beyond_cap() {
+    let (env, id, _, user1, user2) = setup();
+    let launchpad = LaunchpadClient::new(&env, &id);
+
+    set_ledger(&env, 150);
+
+    // Fill the cap
+    launchpad.contribute(&user1, &1_000_000);
+    // This should exceed cap
+    launchpad.contribute(&user2, &1);
+}
+
+#[test]
+#[should_panic(expected = "nothing to claim")]
+fn test_claim_before_vesting_starts() {
+    let (env, id, admin, user1, _) = setup();
+    let launchpad = LaunchpadClient::new(&env, &id);
+
+    set_ledger(&env, 150);
+    launchpad.contribute(&user1, &100);
+    launchpad.fund(&admin, &100_000);
+
+    // Claim during cliff period → nothing to claim
+    set_ledger(&env, 250);
+    launchpad.claim(&user1);
+}
+
+#[test]
+fn test_partial_claim_during_vesting() {
+    let (env, id, admin, user1, _) = setup();
+    let token_addr = get_token_address(&env, &id);
+    let token_client = token::TokenClient::new(&env, &token_addr);
+
+    set_ledger(&env, 150);
+
+    let launchpad = LaunchpadClient::new(&env, &id);
+    launchpad.contribute(&user1, &100);
+    launchpad.fund(&admin, &100_000);
+
+    // Advance to midway through vesting (end=200, cliff=100, vesting=500)
+    // cliff_end = 300, full_end = 800
+    set_ledger(&env, 550); // 250s after cliff_end → 50% vested
+
+    launchpad.claim(&user1);
+    let claimed: i128 = token_client.balance(&user1);
+    assert_eq!(claimed, 50_000); // 50% of 100_000
+}
+
+#[test]
+fn test_get_claimable_zero_for_non_contributor() {
+    let (env, id, _, user1, _) = setup();
+    let launchpad = LaunchpadClient::new(&env, &id);
+
+    let claimable = launchpad.get_claimable(&user1);
+    assert_eq!(claimable.vested, 0);
+    assert_eq!(claimable.available, 0);
+}
+
+#[test]
+fn test_zero_vesting_releases_immediately() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+
+    let token_sac = env.register_stellar_asset_contract_v2(admin.clone());
+    let token_addr = token_sac.address();
+    let token_admin = token::StellarAssetClient::new(&env, &token_addr);
+    token_admin.mint(&admin, &1_000_000_000_000i128);
+
+    let deposit_sac = env.register_stellar_asset_contract_v2(admin.clone());
+    let deposit_addr = deposit_sac.address();
+    let deposit_admin = token::StellarAssetClient::new(&env, &deposit_addr);
+    deposit_admin.mint(&admin, &1_000_000_000_000i128);
+    deposit_admin.mint(&user, &1_000_000_000i128);
+
+    let contract_id = env.register(Launchpad, ());
+    let launchpad = LaunchpadClient::new(&env, &contract_id);
+
+    // No vesting: vesting_duration = 0
+    launchpad.initialize(&admin, &token_addr, &deposit_addr, &1_000, &1_000_000, &500_000, &100, &200, &0, &0);
+
+    set_ledger(&env, 150);
+    launchpad.contribute(&user, &100);
+    launchpad.fund(&admin, &100_000);
+
+    // After sale ends, tokens are immediately claimable
+    set_ledger(&env, 201);
+
+    let claimable = launchpad.get_claimable(&user);
+    assert_eq!(claimable.available, 100_000);
+}
+
 fn get_deposit_address(env: &Env, contract_id: &Address) -> Address {
     LaunchpadClient::new(env, contract_id)
         .get_launchpad_info()

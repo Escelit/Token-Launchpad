@@ -1,5 +1,5 @@
 #![no_std]
-#![allow(clippy::too_many_arguments, clippy::needless_borrows_for_generic_args)]
+#![allow(clippy::too_many_arguments)]
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, token, Address, Env, Map, Symbol,
 };
@@ -117,7 +117,8 @@ impl Launchpad {
         }
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
-        deposit.transfer(&caller, &env.current_contract_address(), &(amount as i128));
+        let contract_addr = env.current_contract_address();
+        deposit.transfer(&caller, &contract_addr, &(amount as i128));
         let tokens = (amount as u128 * info.price as u128) as u64;
 
         let mut map: Map<Address, ContributorInfo> = env
@@ -168,8 +169,9 @@ impl Launchpad {
         env.storage().instance().set(&CONTRIBUTORS, &map);
 
         let token_client = token::TokenClient::new(&env, &info.token);
+        let contract_addr = env.current_contract_address();
         token_client.transfer(
-            &env.current_contract_address(),
+            &contract_addr,
             &caller,
             &(available as i128),
         );
@@ -196,9 +198,10 @@ impl Launchpad {
         }
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
-        let balance = deposit.balance(&env.current_contract_address());
+        let contract_addr = env.current_contract_address();
+        let balance = deposit.balance(&contract_addr);
         if balance > 0 {
-            deposit.transfer(&env.current_contract_address(), &admin, &balance);
+            deposit.transfer(&contract_addr, &admin, &balance);
         }
     }
 
@@ -237,8 +240,9 @@ impl Launchpad {
         let contrib = map.get(caller.clone()).expect("no contribution");
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
+        let contract_addr = env.current_contract_address();
         deposit.transfer(
-            &env.current_contract_address(),
+            &contract_addr,
             &caller,
             &(contrib.contributed as i128),
         );
@@ -260,7 +264,8 @@ impl Launchpad {
         }
 
         let token_client = token::TokenClient::new(&env, &info.token);
-        token_client.transfer(&admin, &env.current_contract_address(), &(amount as i128));
+        let contract_addr = env.current_contract_address();
+        token_client.transfer(&admin, &contract_addr, &(amount as i128));
     }
 
     pub fn get_launchpad_info(env: Env) -> LaunchpadInfo {

@@ -4,8 +4,9 @@
 
 [![CI](https://github.com/Escelit/Token-Launchpad/actions/workflows/ci.yml/badge.svg)](https://github.com/Escelit/Token-Launchpad/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/Rust-1.79+-deaL?logo=rust)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/Rust-1.84+-deaL?logo=rust)](https://www.rust-lang.org)
 [![Soroban SDK](https://img.shields.io/badge/Soroban_SDK-26-blue)](#tech-stack)
+[![Tests: 15 contract + 12 frontend](https://img.shields.io/badge/tests-15%20contract%20%2B%2012%20frontend-green)](#testing-philosophy)
 
 ```text
                   ╔══════════════════════════════════════╗
@@ -658,23 +659,31 @@ No manual XDR assembly. No custom signing logic.
 
 ## Testing Philosophy
 
-The contract has **9 tests** covering every function and every error case. Tests use **Soroban's `testutils`** with `Env::test()` and ledger time manipulation.
+### Contract tests
 
-### What's tested
+The contract has **15 tests** covering every function, edge case, and error path. Tests use **Soroban's `testutils`** with `Env::test()` and ledger time manipulation.
+
+#### What's tested
 
 | Test | What it proves |
 |------|----------------|
 | `test_initialize` | Contract stores all parameters correctly |
-| `test_double_initialize` | Second `initialize` is rejected (error 1) |
+| `test_double_initialize` | Second `initialize` is rejected |
 | `test_contribute` | Tokens transfer, allocation is recorded |
-| `test_contribute_before_start` | Early contributions are rejected (error 4) |
+| `test_contribute_before_start` | Early contributions are rejected |
+| `test_contribute_beyond_cap` | Hard cap cannot be exceeded |
 | `test_claim_after_vesting` | Full lifecycle works end-to-end |
+| `test_claim_before_vesting_starts` | Claim during cliff period is rejected |
+| `test_partial_claim_during_vesting` | Linear vesting releases the correct portion at midpoint |
 | `test_get_claimable` | Vesting math is correct at every time point |
-| `test_withdraw_before_end` | Early withdrawal is rejected (error 5) |
+| `test_get_claimable_zero_for_non_contributor` | Non-contributors get zero claimable |
+| `test_withdraw_before_end` | Early withdrawal is rejected |
 | `test_withdraw_after_sale_meets_soft_cap` | Admin can collect after successful sale |
 | `test_cancel_and_refund` | Cancel stops sale, investors get refunds |
+| `test_refund_when_soft_cap_not_met` | Investors can refund after sale ends below soft cap |
+| `test_zero_vesting_releases_immediately` | Vesting duration 0 → full release at TGE |
 
-### How tests work
+#### How tests work
 
 ```rust
 use soroban_sdk::testutils::Ledger;
@@ -705,6 +714,22 @@ fn test_my_scenario() {
     // assert results
 }
 ```
+
+### Frontend tests
+
+The frontend has **12 Vitest tests** covering the `stellar.ts` utility layer (decimal conversion roundtrips, edge cases).
+
+```bash
+cd frontend
+npm test            # run once
+npm run test:watch  # watch mode
+```
+
+| Test | What it proves |
+|------|----------------|
+| `toHumanReadable` (4 cases) | 7-decimal conversion, zero, large amounts, custom decimals |
+| `fromHumanReadable` (5 cases) | Parsing integers, decimals, zero, no-leading-integer, precision truncation, custom decimals |
+| `roundtrip` (1 case, 6 values) | `toHumanReadable ∘ fromHumanReadable` preserves numeric value |
 
 ---
 

@@ -305,7 +305,18 @@ fn test_zero_vesting_releases_immediately() {
     let launchpad = LaunchpadClient::new(&env, &contract_id);
 
     // No vesting: vesting_duration = 0
-    launchpad.initialize(&admin, &token_addr, &deposit_addr, &1_000, &1_000_000, &500_000, &100, &200, &0, &0);
+    launchpad.initialize(
+        &admin,
+        &token_addr,
+        &deposit_addr,
+        &1_000,
+        &1_000_000,
+        &500_000,
+        &100,
+        &200,
+        &0,
+        &0,
+    );
 
     set_ledger(&env, 150);
     launchpad.contribute(&user, &100);

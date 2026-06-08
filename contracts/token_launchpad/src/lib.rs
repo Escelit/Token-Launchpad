@@ -170,11 +170,7 @@ impl Launchpad {
 
         let token_client = token::TokenClient::new(&env, &info.token);
         let contract_addr = env.current_contract_address();
-        token_client.transfer(
-            &contract_addr,
-            &caller,
-            &(available as i128),
-        );
+        token_client.transfer(&contract_addr, &caller, &(available as i128));
     }
 
     pub fn withdraw_deposits(env: Env, admin: Address) {
@@ -241,11 +237,7 @@ impl Launchpad {
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
         let contract_addr = env.current_contract_address();
-        deposit.transfer(
-            &contract_addr,
-            &caller,
-            &(contrib.contributed as i128),
-        );
+        deposit.transfer(&contract_addr, &caller, &(contrib.contributed as i128));
 
         map.remove(caller.clone());
         env.storage().instance().set(&CONTRIBUTORS, &map);

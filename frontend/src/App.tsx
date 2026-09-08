@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useWallet } from "./hooks/useWallet";
 import { WalletBar } from "./components/WalletBar";
 import { AdminPanel } from "./components/AdminPanel";
@@ -10,6 +10,9 @@ export default function App() {
     import.meta.env.VITE_CONTRACT_ID || ""
   );
   const [isAdmin, setIsAdmin] = useState(false);
+  const [refreshSignal, setRefreshSignal] = useState(0);
+
+  const onAdminSuccess = useCallback(() => setRefreshSignal((s) => s + 1), []);
 
   if (!connected) {
     return (
@@ -61,13 +64,14 @@ export default function App() {
               pubKey={pubKey!}
               signTransaction={signTransaction}
               contractId={contractId}
+              refreshSignal={refreshSignal}
             />
             {isAdmin && (
               <AdminPanel
                 pubKey={pubKey!}
                 signTransaction={signTransaction}
                 contractId={contractId}
-                onSuccess={() => {}}
+                onSuccess={onAdminSuccess}
               />
             )}
           </div>

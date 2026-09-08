@@ -15,6 +15,7 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
   const [withdrawing, setWithdrawing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState({
     token: "",
     deposit_token: "",
@@ -33,6 +34,7 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
   const handleCreate = async () => {
     setCreating(true);
     setError(null);
+    setSuccess(null);
     try {
       const now = Math.floor(Date.now() / 1000);
       await initialize(client, {
@@ -47,6 +49,7 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
         cliff: BigInt(form.cliff || "0"),
         vesting_duration: BigInt(form.vesting_duration || "0"),
       });
+      setSuccess("Launchpad created");
       onSuccess();
     } catch (e: any) {
       setError(e.message || String(e));
@@ -57,9 +60,11 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
   const handleFund = async () => {
     setFunding(true);
     setError(null);
+    setSuccess(null);
     try {
       const amount = fromHumanReadable(fundAmount || "0");
       await fund(client, amount);
+      setSuccess("Launchpad funded");
       onSuccess();
     } catch (e: any) {
       setError(e.message || String(e));
@@ -70,8 +75,10 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
   const handleWithdraw = async () => {
     setWithdrawing(true);
     setError(null);
+    setSuccess(null);
     try {
       await withdrawDeposits(client);
+      setSuccess("Deposits withdrawn");
       onSuccess();
     } catch (e: any) {
       setError(e.message || String(e));
@@ -82,8 +89,10 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
   const handleCancel = async () => {
     setCancelling(true);
     setError(null);
+    setSuccess(null);
     try {
       await cancel(client);
+      setSuccess("Sale cancelled");
       onSuccess();
     } catch (e: any) {
       setError(e.message || String(e));
@@ -101,6 +110,12 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
       {error && (
         <div className="bg-red-900/50 border border-red-700 p-3 rounded-lg text-red-300 text-sm">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-emerald-900/50 border border-emerald-700 p-3 rounded-lg text-emerald-300 text-sm">
+          {success}
         </div>
       )}
 

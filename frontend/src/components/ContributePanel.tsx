@@ -8,6 +8,7 @@ interface Props {
   pubKey: string;
   signTransaction: NonNullable<ClientOptions["signTransaction"]>;
   contractId: string;
+  refreshSignal?: number;
 }
 
 function StatusBadge({ info }: { info: LaunchpadInfo }) {
@@ -18,9 +19,9 @@ function StatusBadge({ info }: { info: LaunchpadInfo }) {
   return <span className="text-blue-400 text-xs font-medium">ENDED</span>;
 }
 
-export function ContributePanel({ pubKey, signTransaction, contractId }: Props) {
+export function ContributePanel({ pubKey, signTransaction, contractId, refreshSignal }: Props) {
   const { info, contrib, claimable, loading, error, doContribute, doClaim, doRefund, refresh } =
-    useLaunchpad({ pubKey, signTransaction, contractId });
+    useLaunchpad({ pubKey, signTransaction, contractId, refreshSignal });
   const [amount, setAmount] = useState("");
 
   if (!info) {

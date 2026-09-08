@@ -15,9 +15,10 @@ interface Props {
   pubKey: string;
   signTransaction: NonNullable<ClientOptions["signTransaction"]>;
   contractId: string;
+  refreshSignal?: number;
 }
 
-export function useLaunchpad({ pubKey, signTransaction, contractId }: Props) {
+export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSignal = 0 }: Props) {
   const client = createClient(contractId, pubKey, signTransaction);
   const [info, setInfo] = useState<LaunchpadInfo | null>(null);
   const [contrib, setContrib] = useState<ContributorInfo | null>(null);
@@ -43,7 +44,7 @@ export function useLaunchpad({ pubKey, signTransaction, contractId }: Props) {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, refreshSignal]);
 
   const doContribute = async (amount: bigint) => {
     setLoading(true);

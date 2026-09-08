@@ -1,7 +1,8 @@
 #![no_std]
 #![allow(clippy::too_many_arguments)]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, token, Address, Env, Map, Symbol,
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, Map,
+    Symbol,
 };
 
 const LAUNCHPAD: Symbol = symbol_short!("launchpad");
@@ -40,7 +41,7 @@ pub struct ClaimableAmount {
     pub available: u64,
 }
 
-#[contracttype]
+#[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum ContractError {
@@ -54,6 +55,7 @@ pub enum ContractError {
     NoContribution = 8,
     NothingToClaim = 9,
     Cancelled = 10,
+    SaleSucceeded = 11,
 }
 
 #[contract]
@@ -73,9 +75,9 @@ impl Launchpad {
         end: u64,
         cliff: u64,
         vesting_duration: u64,
-    ) {
+    ) -> Result<(), ContractError> {
         if env.storage().instance().has(&LAUNCHPAD) {
-            panic!("already initialized");
+            return Err(ContractError::AlreadyInitialized);
         }
         admin.require_auth();
 
@@ -95,25 +97,26 @@ impl Launchpad {
             cancelled: false,
         };
         env.storage().instance().set(&LAUNCHPAD, &info);
+        Ok(())
     }
 
-    pub fn contribute(env: Env, caller: Address, amount: u64) {
+    pub fn contribute(env: Env, caller: Address, amount: u64) -> Result<(), ContractError> {
         caller.require_auth();
 
         let mut info: LaunchpadInfo = env
             .storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .ok_or(ContractError::NotInitialized)?;
         if info.cancelled {
-            panic!("cancelled");
+            return Err(ContractError::Cancelled);
         }
         let now = env.ledger().timestamp();
         if now < info.start || now > info.end {
-            panic!("sale not active");
+            return Err(ContractError::SaleNotActive);
         }
         if info.total_raised + amount > info.cap {
-            panic!("cap reached");
+            return Err(ContractError::CapReached);
         }
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
@@ -140,16 +143,17 @@ impl Launchpad {
         info.total_raised += amount;
         info.total_tokens_sold += tokens;
         env.storage().instance().set(&LAUNCHPAD, &info);
+        Ok(())
     }
 
-    pub fn claim(env: Env, caller: Address) {
+    pub fn claim(env: Env, caller: Address) -> Result<(), ContractError> {
         caller.require_auth();
 
         let info: LaunchpadInfo = env
             .storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .ok_or(ContractError::NotInitialized)?;
         let now = env.ledger().timestamp();
 
         let mut map: Map<Address, ContributorInfo> = env
@@ -157,11 +161,13 @@ impl Launchpad {
             .instance()
             .get(&CONTRIBUTORS)
             .unwrap_or(Map::new(&env));
-        let mut contrib = map.get(caller.clone()).expect("no contribution");
+        let mut contrib = map
+            .get(caller.clone())
+            .ok_or(ContractError::NoContribution)?;
 
         let available = Self::compute_available(&info, &contrib, now);
         if available == 0 {
-            panic!("nothing to claim");
+            return Err(ContractError::NothingToClaim);
         }
 
         contrib.tokens_claimed += available;
@@ -171,26 +177,27 @@ impl Launchpad {
         let token_client = token::TokenClient::new(&env, &info.token);
         let contract_addr = env.current_contract_address();
         token_client.transfer(&contract_addr, &caller, &(available as i128));
+        Ok(())
     }
 
-    pub fn withdraw_deposits(env: Env, admin: Address) {
+    pub fn withdraw_deposits(env: Env, admin: Address) -> Result<(), ContractError> {
         admin.require_auth();
 
         let info: LaunchpadInfo = env
             .storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .ok_or(ContractError::NotInitialized)?;
         if admin != info.admin {
-            panic!("not admin");
+            return Err(ContractError::NotAdmin);
         }
 
         let now = env.ledger().timestamp();
         if now <= info.end && !info.cancelled {
-            panic!("sale not ended");
+            return Err(ContractError::SaleNotEnded);
         }
         if !info.cancelled && info.total_raised < info.soft_cap {
-            panic!("below soft cap");
+            return Err(ContractError::BelowSoftCap);
         }
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
@@ -199,33 +206,35 @@ impl Launchpad {
         if balance > 0 {
             deposit.transfer(&contract_addr, &admin, &balance);
         }
+        Ok(())
     }
 
-    pub fn cancel(env: Env, admin: Address) {
+    pub fn cancel(env: Env, admin: Address) -> Result<(), ContractError> {
         admin.require_auth();
 
         let mut info: LaunchpadInfo = env
             .storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .ok_or(ContractError::NotInitialized)?;
         if admin != info.admin {
-            panic!("not admin");
+            return Err(ContractError::NotAdmin);
         }
         info.cancelled = true;
         env.storage().instance().set(&LAUNCHPAD, &info);
+        Ok(())
     }
 
-    pub fn refund(env: Env, caller: Address) {
+    pub fn refund(env: Env, caller: Address) -> Result<(), ContractError> {
         caller.require_auth();
 
         let info: LaunchpadInfo = env
             .storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .ok_or(ContractError::NotInitialized)?;
         if !info.cancelled && info.total_raised >= info.soft_cap {
-            panic!("sale succeeded, no refunds");
+            return Err(ContractError::SaleSucceeded);
         }
 
         let mut map: Map<Address, ContributorInfo> = env
@@ -233,7 +242,9 @@ impl Launchpad {
             .instance()
             .get(&CONTRIBUTORS)
             .unwrap_or(Map::new(&env));
-        let contrib = map.get(caller.clone()).expect("no contribution");
+        let contrib = map
+            .get(caller.clone())
+            .ok_or(ContractError::NoContribution)?;
 
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
         let contract_addr = env.current_contract_address();
@@ -241,30 +252,32 @@ impl Launchpad {
 
         map.remove(caller.clone());
         env.storage().instance().set(&CONTRIBUTORS, &map);
+        Ok(())
     }
 
-    pub fn fund(env: Env, admin: Address, amount: u64) {
+    pub fn fund(env: Env, admin: Address, amount: u64) -> Result<(), ContractError> {
         admin.require_auth();
 
         let info: LaunchpadInfo = env
             .storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .ok_or(ContractError::NotInitialized)?;
         if admin != info.admin {
-            panic!("not admin");
+            return Err(ContractError::NotAdmin);
         }
 
         let token_client = token::TokenClient::new(&env, &info.token);
         let contract_addr = env.current_contract_address();
         token_client.transfer(&admin, &contract_addr, &(amount as i128));
+        Ok(())
     }
 
-    pub fn get_launchpad_info(env: Env) -> LaunchpadInfo {
+    pub fn get_launchpad_info(env: Env) -> Result<LaunchpadInfo, ContractError> {
         env.storage()
             .instance()
             .get(&LAUNCHPAD)
-            .expect("not initialized")
+            .ok_or(ContractError::NotInitialized)
     }
 
     pub fn get_contributor_info(env: Env, address: Address) -> ContributorInfo {
@@ -281,11 +294,19 @@ impl Launchpad {
     }
 
     pub fn get_claimable(env: Env, address: Address) -> ClaimableAmount {
-        let info: LaunchpadInfo = env
+        let info = match env
             .storage()
             .instance()
-            .get(&LAUNCHPAD)
-            .expect("not initialized");
+            .get::<Symbol, LaunchpadInfo>(&LAUNCHPAD)
+        {
+            Some(i) => i,
+            None => {
+                return ClaimableAmount {
+                    vested: 0,
+                    available: 0,
+                }
+            }
+        };
         let map: Map<Address, ContributorInfo> = env
             .storage()
             .instance()
@@ -303,40 +324,31 @@ impl Launchpad {
         let now = env.ledger().timestamp();
         let total = contrib.tokens_bought;
         let already = contrib.tokens_claimed;
-        let vested = if info.vesting_duration == 0 {
-            total
-        } else {
-            let cliff_end = info.end + info.cliff;
-            let full_end = cliff_end + info.vesting_duration;
-            if now >= full_end {
-                total
-            } else if now <= cliff_end {
-                0
-            } else {
-                let elapsed = now - cliff_end;
-                (total as u128 * elapsed as u128 / info.vesting_duration as u128) as u64
-            }
-        };
+        let vested = Self::compute_vested(&info, total, now);
         ClaimableAmount {
             vested,
             available: vested.saturating_sub(already),
         }
     }
 
-    fn compute_available(info: &LaunchpadInfo, contrib: &ContributorInfo, now: u64) -> u64 {
+    fn compute_vested(info: &LaunchpadInfo, total_tokens: u64, now: u64) -> u64 {
         if info.vesting_duration == 0 {
-            return contrib.tokens_bought.saturating_sub(contrib.tokens_claimed);
+            return total_tokens;
         }
         let cliff_end = info.end + info.cliff;
         let full_end = cliff_end + info.vesting_duration;
-        let vested = if now >= full_end {
-            contrib.tokens_bought
+        if now >= full_end {
+            total_tokens
         } else if now <= cliff_end {
             0
         } else {
             let elapsed = now - cliff_end;
-            (contrib.tokens_bought as u128 * elapsed as u128 / info.vesting_duration as u128) as u64
-        };
+            (total_tokens as u128 * elapsed as u128 / info.vesting_duration as u128) as u64
+        }
+    }
+
+    fn compute_available(info: &LaunchpadInfo, contrib: &ContributorInfo, now: u64) -> u64 {
+        let vested = Self::compute_vested(info, contrib.tokens_bought, now);
         vested.saturating_sub(contrib.tokens_claimed)
     }
 }

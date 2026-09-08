@@ -57,7 +57,7 @@ fn test_initialize() {
 }
 
 #[test]
-#[should_panic(expected = "already initialized")]
+#[should_panic(expected = "Error(Contract, #1)")]
 fn test_double_initialize() {
     let (env, contract_id, admin, _, _) = setup();
     let launchpad = LaunchpadClient::new(&env, &contract_id);
@@ -122,7 +122,7 @@ fn test_claim_after_vesting() {
 }
 
 #[test]
-#[should_panic(expected = "sale not active")]
+#[should_panic(expected = "Error(Contract, #4)")]
 fn test_contribute_before_start() {
     let (env, id, _, user1, _) = setup();
     set_ledger(&env, 50);
@@ -130,7 +130,7 @@ fn test_contribute_before_start() {
 }
 
 #[test]
-#[should_panic(expected = "sale not ended")]
+#[should_panic(expected = "Error(Contract, #5)")]
 fn test_withdraw_before_end() {
     let (env, id, admin, _, _) = setup();
     set_ledger(&env, 150);
@@ -223,7 +223,7 @@ fn test_refund_when_soft_cap_not_met() {
 }
 
 #[test]
-#[should_panic(expected = "cap reached")]
+#[should_panic(expected = "Error(Contract, #6)")]
 fn test_contribute_beyond_cap() {
     let (env, id, _, user1, user2) = setup();
     let launchpad = LaunchpadClient::new(&env, &id);
@@ -237,7 +237,7 @@ fn test_contribute_beyond_cap() {
 }
 
 #[test]
-#[should_panic(expected = "nothing to claim")]
+#[should_panic(expected = "Error(Contract, #9)")]
 fn test_claim_before_vesting_starts() {
     let (env, id, admin, user1, _) = setup();
     let launchpad = LaunchpadClient::new(&env, &id);

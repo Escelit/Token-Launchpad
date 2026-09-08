@@ -5,7 +5,7 @@ import { AdminPanel } from "./components/AdminPanel";
 import { ContributePanel } from "./components/ContributePanel";
 
 export default function App() {
-  const { connected, pubKey, connect, signTransaction } = useWallet();
+  const { connected, pubKey, connect, disconnect, signTransaction } = useWallet();
   const [contractId, setContractId] = useState(
     import.meta.env.VITE_CONTRACT_ID || ""
   );
@@ -41,7 +41,12 @@ export default function App() {
               />
               Admin mode
             </label>
-            <WalletBar connected={connected} pubKey={pubKey} onConnect={connect} />
+            <WalletBar
+              connected={connected}
+              pubKey={pubKey}
+              onConnect={connect}
+              onDisconnect={disconnect}
+            />
           </div>
         </div>
       </header>

@@ -2,6 +2,9 @@
 target/
 **/*.rs.bk
 
+# Soroban golden-file test snapshots (regenerate locally)
+**/test_snapshots/
+
 # Stellar / Soroban
 .soroban
 .stellar

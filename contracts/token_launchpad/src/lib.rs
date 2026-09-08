@@ -57,6 +57,10 @@ pub enum ContractError {
     Cancelled = 10,
     SaleSucceeded = 11,
     ZeroAmount = 12,
+    ZeroCap = 13,
+    InvalidTiming = 14,
+    SoftCapExceedsCap = 15,
+    ZeroPrice = 16,
 }
 
 #[contract]
@@ -81,6 +85,19 @@ impl Launchpad {
             return Err(ContractError::AlreadyInitialized);
         }
         admin.require_auth();
+
+        if cap == 0 {
+            return Err(ContractError::ZeroCap);
+        }
+        if price == 0 {
+            return Err(ContractError::ZeroPrice);
+        }
+        if start >= end {
+            return Err(ContractError::InvalidTiming);
+        }
+        if soft_cap > cap {
+            return Err(ContractError::SoftCapExceedsCap);
+        }
 
         let info = LaunchpadInfo {
             admin,

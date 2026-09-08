@@ -348,3 +348,93 @@ fn get_token_address(env: &Env, contract_id: &Address) -> Address {
         .get_launchpad_info()
         .token
 }
+
+fn new_deploy(ts: u64) -> (Env, Address, Address, Address, Address) {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+
+    let token_sac = env.register_stellar_asset_contract_v2(admin.clone());
+    let token_addr = token_sac.address();
+
+    let deposit_sac = env.register_stellar_asset_contract_v2(admin.clone());
+    let deposit_addr = deposit_sac.address();
+
+    let contract_id = env.register(Launchpad, ());
+    set_ledger(&env, ts);
+
+    (env, contract_id, admin, token_addr, deposit_addr)
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #13)")]
+fn test_initialize_zero_cap() {
+    let (env, id, admin, token_addr, deposit_addr) = new_deploy(0);
+    LaunchpadClient::new(&env, &id).initialize(
+        &admin,
+        &token_addr,
+        &deposit_addr,
+        &1_000,
+        &0,
+        &0,
+        &100,
+        &200,
+        &0,
+        &0,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #14)")]
+fn test_initialize_invalid_timing() {
+    let (env, id, admin, token_addr, deposit_addr) = new_deploy(0);
+    LaunchpadClient::new(&env, &id).initialize(
+        &admin,
+        &token_addr,
+        &deposit_addr,
+        &1_000,
+        &1_000_000,
+        &500_000,
+        &200,
+        &100,
+        &0,
+        &0,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #15)")]
+fn test_initialize_soft_cap_exceeds_cap() {
+    let (env, id, admin, token_addr, deposit_addr) = new_deploy(0);
+    LaunchpadClient::new(&env, &id).initialize(
+        &admin,
+        &token_addr,
+        &deposit_addr,
+        &1_000,
+        &100,
+        &500,
+        &100,
+        &200,
+        &0,
+        &0,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #16)")]
+fn test_initialize_zero_price() {
+    let (env, id, admin, token_addr, deposit_addr) = new_deploy(0);
+    LaunchpadClient::new(&env, &id).initialize(
+        &admin,
+        &token_addr,
+        &deposit_addr,
+        &0,
+        &1_000_000,
+        &500_000,
+        &100,
+        &200,
+        &0,
+        &0,
+    );
+}

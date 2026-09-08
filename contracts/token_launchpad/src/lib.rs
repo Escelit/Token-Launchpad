@@ -56,6 +56,7 @@ pub enum ContractError {
     NothingToClaim = 9,
     Cancelled = 10,
     SaleSucceeded = 11,
+    ZeroAmount = 12,
 }
 
 #[contract]
@@ -102,6 +103,9 @@ impl Launchpad {
 
     pub fn contribute(env: Env, caller: Address, amount: u64) -> Result<(), ContractError> {
         caller.require_auth();
+        if amount == 0 {
+            return Err(ContractError::ZeroAmount);
+        }
 
         let mut info: LaunchpadInfo = env
             .storage()

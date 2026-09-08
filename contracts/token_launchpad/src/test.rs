@@ -237,6 +237,14 @@ fn test_contribute_beyond_cap() {
 }
 
 #[test]
+#[should_panic(expected = "Error(Contract, #12)")]
+fn test_contribute_zero_amount() {
+    let (env, id, _, user1, _) = setup();
+    set_ledger(&env, 150);
+    LaunchpadClient::new(&env, &id).contribute(&user1, &0);
+}
+
+#[test]
 #[should_panic(expected = "Error(Contract, #9)")]
 fn test_claim_before_vesting_starts() {
     let (env, id, admin, user1, _) = setup();

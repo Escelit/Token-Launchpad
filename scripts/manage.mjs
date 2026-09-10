@@ -13,17 +13,17 @@ const RPC_URL = process.env.RPC_URL || "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE || "Test SDF Network ; September 2015";
 const ID_PATH = join(__dirname, "..", ".contract-id");
 
-function cmd(s: string) {
+function cmd(s) {
   console.log(`$ ${s}`);
   return execSync(s, { encoding: "utf-8", stdio: "pipe" }).trim();
 }
 
-function getContractId(): string {
+function getContractId() {
   if (existsSync(ID_PATH)) return readFileSync(ID_PATH, "utf-8").trim();
   return "";
 }
 
-function saveContractId(id: string) {
+function saveContractId(id) {
   writeFileSync(ID_PATH, id);
   console.log(`Contract ID saved to ${ID_PATH}`);
 }

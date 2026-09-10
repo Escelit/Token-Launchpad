@@ -63,17 +63,17 @@ export default function App() {
           />
         </div>
 
-        {contractId ? (
+        {contractId && pubKey ? (
           <div className="grid md:grid-cols-2 gap-6">
             <ContributePanel
-              pubKey={pubKey!}
+              pubKey={pubKey}
               signTransaction={signTransaction}
               contractId={contractId}
               refreshSignal={refreshSignal}
             />
             {isAdmin && (
               <AdminPanel
-                pubKey={pubKey!}
+                pubKey={pubKey}
                 signTransaction={signTransaction}
                 contractId={contractId}
                 onSuccess={onAdminSuccess}

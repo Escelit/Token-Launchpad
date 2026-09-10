@@ -47,6 +47,18 @@ describe("fromHumanReadable", () => {
   it("respects custom decimals", () => {
     expect(fromHumanReadable("12.34", 2)).toBe(1234n);
   });
+
+  it("rejects empty string", () => {
+    expect(() => fromHumanReadable("")).toThrow("Invalid amount");
+  });
+
+  it("rejects non-numeric input", () => {
+    expect(() => fromHumanReadable("abc")).toThrow("Invalid amount");
+  });
+
+  it("rejects input with multiple dots", () => {
+    expect(() => fromHumanReadable("1.2.3")).toThrow("Invalid amount");
+  });
 });
 
 describe("roundtrip", () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   createClient,
   getLaunchpadInfo,
@@ -18,8 +18,15 @@ interface Props {
   refreshSignal?: number;
 }
 
+function extractErrorMessage(e: unknown): string {
+  if (e && typeof e === "object" && "message" in e) {
+    return String((e as { message: unknown }).message);
+  }
+  return String(e);
+}
+
 export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSignal = 0 }: Props) {
-  const client = createClient(contractId, pubKey, signTransaction);
+  const client = useMemo(() => createClient(contractId, pubKey, signTransaction), [contractId, pubKey, signTransaction]);
   const [info, setInfo] = useState<LaunchpadInfo | null>(null);
   const [contrib, setContrib] = useState<ContributorInfo | null>(null);
   const [claimable, setClaimable] = useState<ClaimableAmount | null>(null);
@@ -40,7 +47,7 @@ export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSigna
     } catch {
       // not initialized
     }
-  }, [contractId, pubKey]);
+  }, [contractId, pubKey, client]);
 
   useEffect(() => {
     refresh();
@@ -52,8 +59,8 @@ export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSigna
     try {
       await contribute(client, amount);
       await refresh();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setLoading(false);
   };
@@ -64,8 +71,8 @@ export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSigna
     try {
       await claim(client);
       await refresh();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setLoading(false);
   };
@@ -76,8 +83,8 @@ export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSigna
     try {
       await refund(client);
       await refresh();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setLoading(false);
   };

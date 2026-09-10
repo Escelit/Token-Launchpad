@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createClient, initialize, fromHumanReadable, fund, withdrawDeposits, cancel } from "../lib/stellar";
 import type { ClientOptions } from "@stellar/stellar-sdk/contract";
 
@@ -7,6 +7,13 @@ interface Props {
   signTransaction: NonNullable<ClientOptions["signTransaction"]>;
   contractId: string;
   onSuccess: () => void;
+}
+
+function extractErrorMessage(e: unknown): string {
+  if (e && typeof e === "object" && "message" in e) {
+    return String((e as { message: unknown }).message);
+  }
+  return String(e);
 }
 
 export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: Props) {
@@ -29,7 +36,7 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
   });
   const [fundAmount, setFundAmount] = useState("");
 
-  const client = createClient(contractId, pubKey, signTransaction);
+  const client = useMemo(() => createClient(contractId, pubKey, signTransaction), [contractId, pubKey, signTransaction]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -51,8 +58,8 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
       });
       setSuccess("Launchpad created");
       onSuccess();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setCreating(false);
   };
@@ -66,8 +73,8 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
       await fund(client, amount);
       setSuccess("Launchpad funded");
       onSuccess();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setFunding(false);
   };
@@ -80,8 +87,8 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
       await withdrawDeposits(client);
       setSuccess("Deposits withdrawn");
       onSuccess();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setWithdrawing(false);
   };
@@ -94,8 +101,8 @@ export function AdminPanel({ pubKey, signTransaction, contractId, onSuccess }: P
       await cancel(client);
       setSuccess("Sale cancelled");
       onSuccess();
-    } catch (e: any) {
-      setError(e.message || String(e));
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
     setCancelling(false);
   };

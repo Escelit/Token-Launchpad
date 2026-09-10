@@ -84,7 +84,11 @@ export function toHumanReadable(amount: bigint, decimals: number = 7): string {
 }
 
 export function fromHumanReadable(amount: string, decimals: number = 7): bigint {
-  const parts = amount.split(".");
+  const trimmed = amount.trim();
+  if (!trimmed || !/^-?\d*(\.\d+)?$/.test(trimmed)) {
+    throw new Error(`Invalid amount: "${amount}"`);
+  }
+  const parts = trimmed.split(".");
   const integer = parts[0] || "0";
   const fraction = (parts[1] || "").padEnd(decimals, "0").slice(0, decimals);
   return BigInt(integer) * 10n ** BigInt(decimals) + BigInt(fraction);

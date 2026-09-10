@@ -44,8 +44,13 @@ export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSigna
       setInfo(i);
       setContrib(c);
       setClaimable(cl);
-    } catch {
-      // not initialized
+      if (!i) {
+        setError("No launchpad found at this contract address.");
+      } else {
+        setError(null);
+      }
+    } catch (e: unknown) {
+      setError(extractErrorMessage(e));
     }
   }, [contractId, pubKey, client]);
 

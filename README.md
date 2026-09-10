@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-1.84+-deaL?logo=rust)](https://www.rust-lang.org)
 [![Soroban SDK](https://img.shields.io/badge/Soroban_SDK-26-blue)](#tech-stack)
-[![Tests: 15 contract + 12 frontend](https://img.shields.io/badge/tests-15%20contract%20%2B%2012%20frontend-green)](#testing-philosophy)
+[![Tests: 21 contract + 15 frontend](https://img.shields.io/badge/tests-21%20contract%20%2B%2015%20frontend-green)](#testing-philosophy)
 
 ```text
                   ╔══════════════════════════════════════╗
@@ -58,7 +58,7 @@ The Token Launchpad is an **open, self-sovereign alternative** — a Soroban sma
 |------|--------------|
 | **Project teams** | A turnkey sale contract they deploy and control. Configurable price, caps, timing, and vesting — all set by them, not a platform. |
 | **Investors** | A transparent, on-chain sale. They see exactly what they're buying, when tokens unlock, and can refund if things go wrong. Freighter wallet, one click. |
-| **Developers** | Clean Rust code (9 tests, 10KB WASM), generated TypeScript bindings, and a reference React frontend to fork or embed. |
+| **Developers** | Clean Rust code (21 tests, 10KB WASM), generated TypeScript bindings, and a reference React frontend to fork or embed. |
 
 ### What makes it different
 
@@ -226,8 +226,8 @@ token_launchpad/
 ├── contracts/
 │   └── token_launchpad/           # ◄── The smart contract
 │       ├── src/
-│       │   ├── lib.rs             #     10 exported functions, ~350 lines
-│       │   └── test.rs            #     9 tests, snapshot-based assertions
+│       │   ├── lib.rs             #     10 exported functions, ~380 lines
+│       │   └── test.rs            #     21 tests, snapshot-based assertions
 │       ├── test_snapshots/        #     Golden file snapshots
 │       ├── Cargo.toml             #     soroban-sdk 26, no other deps
 │       └── Makefile
@@ -445,7 +445,7 @@ cargo install soroban-cli --features opt
 
 ```bash
 cargo build --target wasm32v1-none --release
-cargo test                          # 9 tests, all pass
+cargo test                          # 21 tests, all pass
 ```
 
 ### 2. Start the frontend
@@ -926,7 +926,7 @@ The contract ID is wrong or the contract hasn't been initialized. Check `VITE_CO
 | Build | Vite 8 | Fast HMR, clean bundles |
 | Wallet | Freighter | First-class Stellar wallet with `signTransaction` |
 | Stellar SDK | `@stellar/stellar-sdk` v15 | Official SDK with Soroban client generation |
-| Testing | `cargo test` + snapshots | 9 tests, golden-file assertions |
+| Testing | `cargo test` + snapshots | 21 tests, golden-file assertions |
 | CI | GitHub Actions | fmt → clippy → test → tsc → build |
 | WASM size | 10,901 bytes | Optimized release profile (LTO, strip) |
 

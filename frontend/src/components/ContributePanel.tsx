@@ -94,7 +94,7 @@ export function ContributePanel({ pubKey, signTransaction, contractId, refreshSi
         {isLive && (
           <div className="flex gap-2">
             <input
-              type="text"
+              type="number"
               placeholder="Amount to contribute"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

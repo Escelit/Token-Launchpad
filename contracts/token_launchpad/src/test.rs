@@ -438,3 +438,41 @@ fn test_initialize_zero_price() {
         &0,
     );
 }
+
+#[test]
+#[should_panic(expected = "Error(Contract, #17)")]
+fn test_contribute_token_amount_overflow() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+
+    let token_sac = env.register_stellar_asset_contract_v2(admin.clone());
+    let token_addr = token_sac.address();
+
+    let deposit_sac = env.register_stellar_asset_contract_v2(admin.clone());
+    let deposit_addr = deposit_sac.address();
+    let deposit_admin = token::StellarAssetClient::new(&env, &deposit_addr);
+    deposit_admin.mint(&user, &i128::MAX);
+
+    let contract_id = env.register(Launchpad, ());
+    let launchpad = LaunchpadClient::new(&env, &contract_id);
+
+    // price * amount > u64::MAX → TokenAmountOverflow
+    launchpad.initialize(
+        &admin,
+        &token_addr,
+        &deposit_addr,
+        &(u64::MAX / 2),
+        &u64::MAX,
+        &1,
+        &100,
+        &200,
+        &0,
+        &0,
+    );
+
+    set_ledger(&env, 150);
+    launchpad.contribute(&user, &3);
+}

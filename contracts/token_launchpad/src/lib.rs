@@ -61,6 +61,7 @@ pub enum ContractError {
     InvalidTiming = 14,
     SoftCapExceedsCap = 15,
     ZeroPrice = 16,
+    TokenAmountOverflow = 17,
 }
 
 #[contract]
@@ -140,10 +141,14 @@ impl Launchpad {
             return Err(ContractError::CapReached);
         }
 
+        let token_amount = (amount as u128)
+            .checked_mul(info.price as u128)
+            .ok_or(ContractError::TokenAmountOverflow)?;
+        let tokens = u64::try_from(token_amount).map_err(|_| ContractError::TokenAmountOverflow)?;
+
         let deposit = token::TokenClient::new(&env, &info.deposit_token);
         let contract_addr = env.current_contract_address();
         deposit.transfer(&caller, &contract_addr, &(amount as i128));
-        let tokens = (amount as u128 * info.price as u128) as u64;
 
         let mut map: Map<Address, ContributorInfo> = env
             .storage()

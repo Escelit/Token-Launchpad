@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLaunchpad } from "../hooks/useLaunchpad";
 import { toHumanReadable, fromHumanReadable } from "../lib/stellar";
 import type { LaunchpadInfo } from "contract";
@@ -11,8 +11,7 @@ interface Props {
   refreshSignal?: number;
 }
 
-function StatusBadge({ info }: { info: LaunchpadInfo }) {
-  const now = Math.floor(Date.now() / 1000);
+function StatusBadge({ info, now }: { info: LaunchpadInfo; now: number }) {
   if (info.cancelled) return <span className="text-red-400 text-xs font-medium">CANCELLED</span>;
   if (now < Number(info.start)) return <span className="text-yellow-400 text-xs font-medium">UPCOMING</span>;
   if (now <= Number(info.end)) return <span className="text-emerald-400 text-xs font-medium">LIVE</span>;
@@ -23,6 +22,12 @@ export function ContributePanel({ pubKey, signTransaction, contractId, refreshSi
   const { info, contrib, claimable, loading, error, doContribute, doClaim, doRefund, refresh } =
     useLaunchpad({ pubKey, signTransaction, contractId, refreshSignal });
   const [amount, setAmount] = useState("");
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   if (!info) {
     return (
@@ -32,7 +37,6 @@ export function ContributePanel({ pubKey, signTransaction, contractId, refreshSi
     );
   }
 
-  const now = Math.floor(Date.now() / 1000);
   const isLive = now >= Number(info.start) && now <= Number(info.end) && !info.cancelled;
   const progress = Number(info.cap) > 0 ? (Number(info.total_raised) / Number(info.cap)) * 100 : 0;
   const humanPrice = toHumanReadable(info.price);
@@ -50,7 +54,7 @@ export function ContributePanel({ pubKey, signTransaction, contractId, refreshSi
       <div className="bg-gray-800 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">Launchpad</h2>
-          <StatusBadge info={info} />
+          <StatusBadge info={info} now={now} />
         </div>
 
         <div className="space-y-2 text-sm">

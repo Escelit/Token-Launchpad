@@ -25,16 +25,19 @@ export function useWallet() {
   }, []);
 
   useEffect(() => {
-    refreshConnection();
+    const t = setTimeout(() => {
+      void refreshConnection();
+    }, 0);
 
     const onVisibility = () => {
-      if (document.visibilityState === "visible") refreshConnection();
+      if (document.visibilityState === "visible") void refreshConnection();
     };
-    const onFocus = () => refreshConnection();
+    const onFocus = () => void refreshConnection();
 
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", onFocus);
     return () => {
+      clearTimeout(t);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
     };

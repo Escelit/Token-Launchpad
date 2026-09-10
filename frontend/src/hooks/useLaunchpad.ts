@@ -55,7 +55,10 @@ export function useLaunchpad({ pubKey, signTransaction, contractId, refreshSigna
   }, [contractId, pubKey, client]);
 
   useEffect(() => {
-    refresh();
+    const t = setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => clearTimeout(t);
   }, [refresh, refreshSignal]);
 
   const doContribute = async (amount: bigint) => {

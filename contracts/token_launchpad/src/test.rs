@@ -494,3 +494,26 @@ fn test_contribute_rejected_after_cancel() {
     launchpad.cancel(&admin);
     launchpad.contribute(&user1, &100);
 }
+
+#[test]
+#[should_panic(expected = "Error(Contract, #8)")]
+fn test_claim_rejects_non_contributor() {
+    let (env, id, _, user1, _) = setup();
+    set_ledger(&env, 300);
+    LaunchpadClient::new(&env, &id).claim(&user1);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_cancel_rejects_non_admin() {
+    let (env, id, _, user1, _) = setup();
+    LaunchpadClient::new(&env, &id).cancel(&user1);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_withdraw_rejects_non_admin() {
+    let (env, id, _, user1, _) = setup();
+    set_ledger(&env, 300);
+    LaunchpadClient::new(&env, &id).withdraw_deposits(&user1);
+}

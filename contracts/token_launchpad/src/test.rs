@@ -476,3 +476,21 @@ fn test_contribute_token_amount_overflow() {
     set_ledger(&env, 150);
     launchpad.contribute(&user, &3);
 }
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3)")]
+fn test_fund_rejects_non_admin() {
+    let (env, id, _, user1, _) = setup();
+    LaunchpadClient::new(&env, &id).fund(&user1, &100_000);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #10)")]
+fn test_contribute_rejected_after_cancel() {
+    let (env, id, admin, user1, _) = setup();
+    let launchpad = LaunchpadClient::new(&env, &id);
+
+    set_ledger(&env, 150);
+    launchpad.cancel(&admin);
+    launchpad.contribute(&user1, &100);
+}
